@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" href="amaicraft.png">
+    <title>404 · Failed to connect</title>
+    <style>
+        @font-face {
+            font-family: 'Minecraftia';
+            src: local('Minecraftia'), url('Minecraftia.woff') format('woff');
+        }
+
+        * { box-sizing: border-box; }
+
+        /* Le fond des menus de Minecraft : la terre, assombrie */
+        body {
+            font-family: 'Minecraftia', 'Courier New', monospace;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('dirt.png') 0 0 / 64px;
+            background-color: #1d140d;
+            image-rendering: pixelated;
+            text-shadow: 2px 2px 0 #3f3f3f;
+        }
+        a { color: inherit; }
+
+        /* =========================================================
+           CONNEXION : "Connecting to the server...", puis l'erreur
+           ========================================================= */
+        .connecting {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: inherit;
+            font-size: 14px;
+        }
+        .connecting small { font-size: 11px; color: #a0a0a0; }
+        .connecting .dots::after { content: ""; animation: dots 0.9s steps(4) infinite; }
+        @keyframes dots {
+            0%   { content: ""; }
+            25%  { content: "."; }
+            50%  { content: ".."; }
+            100% { content: "..."; }
+        }
+        .connecting.gone { display: none; }
+
+        /* =========================================================
+           ERREUR
+           ========================================================= */
+        .error {
+            text-align: center;
+            padding: 34px 16px 18px;
+        }
+        .error h1 {
+            margin: 0 0 14px;
+            font-weight: normal;
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+        .error .what { margin: 0; font-size: 13px; line-height: 1.8; word-break: break-word; }
+        .error .what b { font-weight: normal; color: #ff5555; text-shadow: 2px 2px 0 #3f1515; }
+        .error .why { margin: 4px 0 0; font-size: 11px; color: #a0a0a0; }
+
+        /* =========================================================
+           LISTE DES SERVEURS (= mes sites)
+           ========================================================= */
+        .list-title { text-align: center; margin: 6px 0 8px; font-size: 13px; font-weight: normal; }
+        .list {
+            flex: 1;
+            padding: 6px 16px;
+            background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55));
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            box-shadow: inset 0 6px 6px -4px rgba(0, 0, 0, 0.9), inset 0 -6px 6px -4px rgba(0, 0, 0, 0.9);
+        }
+        .server {
+            display: grid;
+            grid-template-columns: 64px 1fr auto;
+            gap: 4px 10px;
+            max-width: 610px;
+            margin: 4px auto;
+            padding: 4px;
+            border: 2px solid transparent;
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .server.selected { border-color: #808080; background: #000; }
+        .server .icon { position: relative; width: 64px; height: 64px; grid-row: span 3; }
+        .server .icon img { width: 64px; height: 64px; display: block; image-rendering: auto; }
+        /* au survol, la flèche "rejoindre" sur l'icône, comme dans le jeu */
+        .server .icon::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(144, 144, 144, 0.55);
+            clip-path: polygon(30% 22%, 74% 50%, 30% 78%);
+            opacity: 0;
+        }
+        .server.selected .icon::after { opacity: 1; }
+        .server .name { font-size: 13px; padding-top: 2px; }
+        .server .ping { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a0a0a0; }
+        .server .bars {
+            width: 20px;
+            height: 16px;
+            background: url('ping.png') 0 0 / 20px 96px;
+            image-rendering: pixelated;
+            visibility: hidden;
+        }
+        .server .motd { grid-column: 2 / 4; font-size: 11px; line-height: 1.6; color: #aaaaaa; }
+        .server .addr { grid-column: 2 / 4; font-size: 10px; color: #6f6f6f; }
+
+        /* La suggestion "Did you mean" : la page la plus proche de ce qui a été tapé */
+        .server.guess .name { color: #ffff55; text-shadow: 2px 2px 0 #3f3f15; }
+        .server.guess .motd { color: #fff; word-break: break-all; }
+
+        /* =========================================================
+           BOUTONS
+           ========================================================= */
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-width: 620px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 12px 16px 16px;
+        }
+        .mc-btn {
+            display: block;
+            text-align: center;
+            font-family: inherit;
+            background: #6f6f6f;
+            border: 2px solid #000;
+            box-shadow: inset 2px 2px 0 #aaaaaa, inset -2px -2px 0 #3c3c3c;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 13px;
+            text-shadow: 2px 2px 0 #383838;
+            cursor: pointer;
+        }
+        .mc-btn:hover { background: #7e86b8; box-shadow: inset 2px 2px 0 #bec6ff, inset -2px -2px 0 #3a4170; color: #ffffa0; }
+        .mc-btn.wide { grid-column: 1 / -1; }
+
+        @media (max-width: 560px) {
+            .server { grid-template-columns: 48px 1fr auto; }
+            .server .icon, .server .icon img { width: 48px; height: 48px; }
+            .buttons { grid-template-columns: 1fr; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="connecting" id="connecting">
+        <span id="step" class="dots">Connecting to the server</span>
+        <small id="stepHost"></small>
+    </div>
+
+    <section class="error">
+        <h1>Failed to connect to the server</h1>
+        <p class="what" id="what">Page not found</p>
+        <p class="why" id="why">This page does not exist, but these servers are online.</p>
+    </section>
+
+    <h2 class="list-title">Play Multiplayer</h2>
+
+    <div class="list" id="list">
+        <a class="server" href="https://www.amaicraft.fr/" data-ping="https://www.amaicraft.fr/Icon.png">
+            <span class="icon"><img src="amaicraft.png" alt=""></span>
+            <span class="name">AmaiCraft</span>
+            <span class="ping"><span class="count"></span><span class="bars"></span></span>
+            <span class="motd"><span style="color:#ffff55">An unofficial Minecraft toolbox</span><br>Recipes, commands, mob sounds, music discs, capes</span>
+            <span class="addr">www.amaicraft.fr</span>
+        </a>
+        <a class="server" href="https://arg.amaicraft.fr/" data-ping="https://arg.amaicraft.fr/Characters/Verity/Verity.webp">
+            <span class="icon"><img src="void-archives.png" alt=""></span>
+            <span class="name">Void Archives</span>
+            <span class="ping"><span class="count"></span><span class="bars"></span></span>
+            <span class="motd"><span style="color:#ff5555">Something is Already Here...</span><br>Minecraft horror ARGs: Creator, Verity, The King in Yellow</span>
+            <span class="addr">arg.amaicraft.fr</span>
+        </a>
+    </div>
+
+    <div class="buttons">
+        <a href="#" class="mc-btn" id="join">Join Server</a>
+        <a href="#" class="mc-btn" id="refresh">Refresh</a>
+        <a href="https://www.amaicraft.fr/" class="mc-btn wide">Back to Title Screen</a>
+    </div>
+
+    <script>
+        var CALM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        // Mes sites : leur adresse, leur icône et leur sitemap (pour deviner la bonne page)
+        var SITES = {
+            "www.amaicraft.fr": { icon: "amaicraft.png", sitemap: "https://www.amaicraft.fr/sitemap.xml" },
+            "arg.amaicraft.fr": { icon: "void-archives.png", sitemap: "https://arg.amaicraft.fr/sitemap.xml" }
+        };
+        // Sous-domaines qui existent vraiment : une adresse ailleurs est un "Unknown host"
+        var KNOWN_HOSTS = ["www.amaicraft.fr", "amaicraft.fr", "arg.amaicraft.fr", "funny.amaicraft.fr",
+                           "fromthefog.amaicraft.fr", "amaisharkyuu.amaicraft.fr", "mc.amaicraft.fr"];
+
+        // =========================================================
+        // L'adresse que le visiteur a tapée, envoyée par le 404.html de chaque site
+        // =========================================================
+        var from = null;
+        try { from = new URL(new URLSearchParams(location.search).get("from")); } catch (e) {}
+        if (from && !/(^|\.)amaicraft\.fr$/.test(from.hostname)) from = null;
+
+        var what = document.getElementById("what");
+        var why = document.getElementById("why");
+        var shown = from ? from.hostname + decodeURI(from.pathname).replace(/\/$/, "") : "";
+        function say(label, value, reason) {
+            what.textContent = label + " ";
+            var b = document.createElement("b");
+            b.textContent = value;
+            what.appendChild(b);
+            why.textContent = reason;
+        }
+        if (from && KNOWN_HOSTS.indexOf(from.hostname) === -1) {
+            say("Unknown host:", from.hostname, "This server does not exist, but these ones are online.");
+        } else if (from) {
+            say("Chunk not found:", shown, "This page was never generated in this world.");
+        }
+
+        // =========================================================
+        // Écran "Connecting to the server..." puis "Logging in...", avant l'erreur
+        // =========================================================
+        (function () {
+            var box = document.getElementById("connecting");
+            if (CALM) { box.classList.add("gone"); return; }
+            document.getElementById("stepHost").textContent = from ? from.hostname : location.hostname;
+            setTimeout(function () { document.getElementById("step").textContent = "Logging in"; }, 900);
+            setTimeout(function () { box.classList.add("gone"); }, 1400);
+        })();
+
+        // =========================================================
+        // Liste : survol = sélection, clic = rejoindre, flèches + Entrée au clavier
+        // =========================================================
+        var list = document.getElementById("list");
+        function servers() { return Array.prototype.slice.call(list.querySelectorAll(".server")); }
+        var current = null;
+        function select(s) {
+            current = s;
+            servers().forEach(function (x) { x.classList.toggle("selected", x === s); });
+        }
+        list.addEventListener("mouseover", function (e) {
+            var s = e.target.closest(".server");
+            if (s) select(s);
+        });
+        list.addEventListener("focusin", function (e) {
+            var s = e.target.closest(".server");
+            if (s) select(s);
+        });
+        document.getElementById("join").addEventListener("click", function (e) {
+            e.preventDefault();
+            location.href = (current || servers()[0]).href;
+        });
+        addEventListener("keydown", function (e) {
+            var all = servers(), i = all.indexOf(current);
+            if (e.key === "ArrowDown") { select(all[(i + 1) % all.length]); e.preventDefault(); }
+            else if (e.key === "ArrowUp") { select(all[(i - 1 + all.length) % all.length]); e.preventDefault(); }
+            else if (e.key === "Enter" && current) location.href = current.href;
+        });
+
+        // =========================================================
+        // Ping : le vrai temps de réponse de chaque site, en barres de signal
+        // =========================================================
+        function ping(s) {
+            var bars = s.querySelector(".bars");
+            var count = s.querySelector(".count");
+            if (!s.dataset.ping) return;
+            bars.style.visibility = "hidden";
+            count.textContent = "Pinging...";
+            var t = performance.now();
+            fetch(s.dataset.ping + "?ping=" + Date.now(), { mode: "no-cors", cache: "no-store" })
+                .then(function () {
+                    var ms = Math.round(performance.now() - t);
+                    var frame = ms < 150 ? 0 : ms < 300 ? 1 : ms < 600 ? 2 : ms < 1000 ? 3 : 4;
+                    bars.style.backgroundPosition = "0 " + (-16 * frame) + "px";
+                    bars.title = ms + " ms";
+                    count.textContent = ms + " ms";
+                })
+                .catch(function () {
+                    bars.style.backgroundPosition = "0 -80px";
+                    bars.title = "Can't connect to server";
+                    count.textContent = "";
+                })
+                .then(function () { bars.style.visibility = "visible"; });
+        }
+        function pingAll() { servers().forEach(ping); }
+        pingAll();
+        document.getElementById("refresh").addEventListener("click", function (e) { e.preventDefault(); pingAll(); });
+
+        // =========================================================
+        // "Did you mean" : on cherche dans les sitemaps la page dont le nom ressemble à ce qui a été tapé
+        // (arg.amaicraft.fr/Creator -> arg.amaicraft.fr/Characters/Creator/)
+        // =========================================================
+        function clean(t) { return decodeURIComponent(t).toLowerCase().replace(/\.html?$/, "").replace(/[^a-z0-9]/g, ""); }
+        var typed = from ? from.pathname.split("/").filter(Boolean).map(clean).filter(Boolean) : [];
+        if (typed.length) {
+            var key = typed[typed.length - 1];
+            var hosts = Object.keys(SITES);
+            Promise.all(hosts.map(function (h) {
+                return fetch(SITES[h].sitemap).then(function (r) { return r.text(); }).catch(function () { return ""; });
+            })).then(function (maps) {
+                var best = null;
+                maps.forEach(function (xml, i) {
+                    var locs = xml.match(/<loc>[^<]+<\/loc>/g) || [];
+                    locs.forEach(function (l) {
+                        var url = l.replace(/<\/?loc>/g, "");
+                        var segs;
+                        try { segs = new URL(url).pathname.split("/").filter(Boolean).map(clean); } catch (e) { return; }
+                        var score = 0;
+                        segs.forEach(function (sg) {
+                            if (sg === key) score = Math.max(score, 3);
+                            else if (key.length >= 3 && sg.indexOf(key) !== -1) score = Math.max(score, 2);
+                            else if (sg.length >= 4 && key.indexOf(sg) !== -1) score = Math.max(score, 1);
+                        });
+                        if (!score) return;
+                        if (hosts[i] === from.hostname) score += 0.5;     // même site d'abord
+                        score -= segs.length * 0.01;                      // et la page la moins profonde
+                        if (!best || score > best.score) best = { score: score, url: url, host: hosts[i] };
+                    });
+                });
+                if (!best) return;
+                var a = document.createElement("a");
+                a.className = "server guess";
+                a.href = best.url;
+                a.innerHTML = '<span class="icon"><img alt=""></span><span class="name">Did you mean...</span>' +
+                              '<span class="ping"><span class="count"></span></span><span class="motd"></span>' +
+                              '<span class="addr">Click to join this page</span>';
+                a.querySelector("img").src = SITES[best.host].icon;
+                a.querySelector(".motd").textContent = best.url.replace(/^https?:\/\//, "");
+                list.insertBefore(a, list.firstChild);
+                select(a);
+            });
+        }
+    </script>
+</body>
+</html>
