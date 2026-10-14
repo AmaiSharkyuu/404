@@ -107,7 +107,7 @@
         @keyframes fall { from { transform: translateY(-110vh); } }
         .cube i {
             position: absolute;
-            inset: 0;
+            inset: -0.6px;      /* les faces se chevauchent un peu : pas de fente entre les blocs */
             background-size: 100% 100%;
             backface-visibility: hidden;
         }
@@ -348,7 +348,7 @@
         // Mes sites et leurs pages. Les sitemaps complètent cette liste toute seule.
         // =========================================================
         var SITES = [
-            { host: "www.amaicraft.fr", name: "AmaiCraft", icon: "amaicraft.png", ping: W + "/Icon.png", sitemap: W + "/sitemap.xml", pages: [
+            { host: "www.amaicraft.fr", name: "AmaiCraft", listAll: true, icon: "amaicraft.png", ping: W + "/Icon.png", sitemap: W + "/sitemap.xml", pages: [
                 { path: "/", name: "Home", desc: "The AmaiCraft title screen", icon: W + "/assets/ui/grass_block.png" },
                 { path: "/recipecraft/", name: "Crafting Guide", desc: "Every crafting recipe", icon: W + "/assets/ui/crafting_table.webp" },
                 { path: "/commands/", name: "Commands", desc: "The basic commands", icon: W + "/assets/ui/command_block.png" },
@@ -357,13 +357,13 @@
                 { path: "/Capes/", name: "Capes", desc: "Every Minecraft cape", icon: W + "/assets/ui/elytra.png" },
                 { path: "/Game/", name: "Mining Game", desc: "A little mining mini-game", icon: W + "/assets/ui/diamond_pickaxe.png" }
             ]},
-            { host: "arg.amaicraft.fr", name: "Void Archives", icon: "void-archives.png", ping: A + "/Characters/Verity/Verity.webp", sitemap: A + "/sitemap.xml", pages: [
+            { host: "arg.amaicraft.fr", name: "Void Archives", listAll: false, icon: "void-archives.png", ping: A + "/Characters/Verity/Verity.webp", sitemap: A + "/sitemap.xml", pages: [
                 { path: "/", name: "Main Menu", desc: "Minecraft horror ARG archives", icon: "void-archives.png" },
                 { path: "/Characters/Creator/", name: "Creator", desc: "Twixxel's ARG, day by day", icon: A + "/Characters/Creator/Creator.png" },
                 { path: "/Characters/Verity/", name: "Verity", desc: "ThatMob's ARG, two timelines", icon: A + "/Characters/Verity/Images/Verity_happy_face.webp" },
-                { path: "/Characters/Verity/thatmob.html", name: "Verity: ThatMob", desc: "The canon story", icon: A + "/Characters/Verity/Images/Verity_evil_face.png" },
-                { path: "/Characters/Verity/grox.html", name: "Verity: Grox", desc: "Grox's timeline", icon: A + "/Characters/Verity/Images/Grox%27sLastPost.webp" },
-                { path: "/Characters/TheKingInYellow/", name: "The King in Yellow", desc: "Wifies' ARG, unfinished", icon: A + "/Characters/TheKingInYellow/Thekinginyellowtrueform.webp" }
+                { hidden: true, path: "/Characters/Verity/thatmob.html", name: "Verity: ThatMob", desc: "The canon story", icon: A + "/Characters/Verity/Images/Verity_evil_face.png" },
+                { hidden: true, path: "/Characters/Verity/grox.html", name: "Verity: Grox", desc: "Grox's timeline", icon: A + "/Characters/Verity/Images/Grox%27sLastPost.webp" },
+                { hidden: true, path: "/Characters/TheKingInYellow/", name: "The King in Yellow", desc: "Wifies' ARG, unfinished", icon: A + "/Characters/TheKingInYellow/Thekinginyellowtrueform.webp" }
             ]}
         ];
         var KNOWN_HOSTS = ["www.amaicraft.fr", "amaicraft.fr", "arg.amaicraft.fr", "funny.amaicraft.fr",
@@ -483,9 +483,10 @@
         // =========================================================
         // Le portail : direction une page au hasard, avec la nausée du passage
         // =========================================================
-        var ALL = [];
+        var ALL = [];       // toutes les pages, même cachées : pour "Did you mean"
+        var SHOWN = [];     // celles de la liste : pour le portail
         portal.addEventListener("click", function () {
-            var page = ALL[Math.floor(Math.random() * ALL.length)];
+            var page = SHOWN[Math.floor(Math.random() * SHOWN.length)];
             if (CALM) { location.href = page.url; return; }
             document.body.classList.add("warp");
             document.getElementById("nausea").classList.add("on");
@@ -503,6 +504,7 @@
         function render() {
             sitesBox.innerHTML = "";
             ALL = [];
+            SHOWN = [];
             SITES.forEach(function (s) {
                 var panel = document.createElement("section");
                 panel.className = "panel";
@@ -515,6 +517,8 @@
                     p.url = "https://" + s.host + p.path;
                     p.site = s;
                     ALL.push(p);
+                    if (p.hidden) return;
+                    SHOWN.push(p);
                     var li = document.createElement("li");
                     li.innerHTML = '<a><img alt="" loading="lazy"><div><span></span><small></small></div></a>';
                     li.querySelector("a").href = p.url;
@@ -558,7 +562,8 @@
                     try { path = new URL(l.replace(/<\/?loc>/g, "")).pathname; } catch (e) { return; }
                     if (s.pages.some(function (p) { return p.path === path; })) return;
                     var segs = path.split("/").filter(Boolean);
-                    s.pages.push({ path: path, name: title(segs[segs.length - 1] || "Home"), desc: path });
+                    // pages absentes d'ici : affichées pour AmaiCraft, seulement devinables pour Void Archives
+                    s.pages.push({ path: path, name: title(segs[segs.length - 1] || "Home"), desc: path, hidden: !s.listAll });
                 });
             });
             render();
