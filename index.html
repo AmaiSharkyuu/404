@@ -86,6 +86,11 @@
             perspective: calc(var(--b) * 28);
             z-index: 1;
         }
+        /* Les conteneurs du 404 sont plats, posés devant : là où la scène penche vers l'arrière
+           (le 4 de gauche, le bas du portail), ils prendraient les clics à la place des blocs.
+           Ils laissent donc passer les clics, et seuls les faces des blocs et le portail les reçoivent. */
+        .stage, .bob, .world, .cube, .drop { pointer-events: none; }
+        .cube i, .portal { pointer-events: auto; }
         .bob { width: 100%; height: 100%; transform-style: preserve-3d; animation: bob 5s ease-in-out infinite; }
         @keyframes bob { 50% { transform: translateY(calc(var(--b) * -0.18)); } }
         .world {
