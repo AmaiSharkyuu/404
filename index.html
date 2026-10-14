@@ -5,158 +5,298 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
     <link rel="icon" type="image/png" href="amaicraft.png">
-    <title>404 · Failed to connect</title>
+    <title>404 · Chunk not found</title>
     <style>
         @font-face {
             font-family: 'Minecraftia';
             src: local('Minecraftia'), url('Minecraftia.woff') format('woff');
         }
 
+        :root {
+            --b: clamp(22px, 6.4vw, 48px);      /* taille d'un bloc du grand 404 */
+            --panel: #c6c6c6;
+            --light: #ffffff;
+            --dark: #555555;
+            --ink: #3f3f3f;
+        }
+
         * { box-sizing: border-box; }
 
-        /* Le fond des menus de Minecraft : la terre, assombrie */
+        html { scrollbar-width: thin; scrollbar-color: #555 #1d140d; }
+
         body {
             font-family: 'Minecraftia', 'Courier New', monospace;
             margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
             color: #fff;
-            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('dirt.png') 0 0 / 64px;
-            background-color: #1d140d;
+            background: #1d140d;
             image-rendering: pixelated;
-            text-shadow: 2px 2px 0 #3f3f3f;
+            overflow-x: hidden;
         }
         a { color: inherit; }
+        img { image-rendering: pixelated; }
 
         /* =========================================================
-           CONNEXION : "Connecting to the server...", puis l'erreur
+           LE CIEL : couleur du jour de Minecraft, soleil carré, nuages du jeu
            ========================================================= */
-        .connecting {
-            position: fixed;
-            inset: 0;
-            z-index: 10;
+        .sky {
+            position: relative;
+            min-height: 56vh;
+            min-height: 56svh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            background: inherit;
-            font-size: 14px;
+            padding: 40px 16px 70px;
+            background: linear-gradient(#6f9cff 0%, #8db3ff 55%, #c3d9ff 100%);
         }
-        .connecting small { font-size: 11px; color: #a0a0a0; }
-        .connecting .dots::after { content: ""; animation: dots 0.9s steps(4) infinite; }
-        @keyframes dots {
-            0%   { content: ""; }
-            25%  { content: "."; }
-            50%  { content: ".."; }
-            100% { content: "..."; }
+        .sun {
+            position: absolute;
+            top: 9%;
+            right: 12%;
+            width: calc(var(--b) * 2);
+            height: calc(var(--b) * 2);
+            background: url('sun.png') center / 160% no-repeat;
+            mix-blend-mode: screen;
         }
-        .connecting.gone { display: none; }
+        /* la vraie texture des nuages, posée en plafond et qui défile lentement */
+        .clouds {
+            position: absolute;
+            left: -50%;
+            right: -50%;
+            top: -10%;
+            height: 60%;
+            background: url('clouds.png') 0 0 / 3072px;
+            opacity: 0.85;
+            transform: perspective(500px) rotateX(-58deg);
+            transform-origin: 50% 0;
+            animation: drift 240s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes drift { to { background-position: 3072px 0; } }
 
         /* =========================================================
-           ERREUR
+           LE GRAND 404 EN BLOCS : deux 4 en herbe, un 0 en portail du Nether
            ========================================================= */
-        .error {
-            text-align: center;
-            padding: 34px 16px 18px;
+        .stage {
+            position: relative;
+            width: calc(var(--b) * 12);
+            height: calc(var(--b) * 5);
+            margin: 0 auto;
+            perspective: calc(var(--b) * 28);
+            z-index: 1;
         }
-        .error h1 {
-            margin: 0 0 14px;
-            font-weight: normal;
-            font-size: 14px;
-            color: #a0a0a0;
+        .bob { width: 100%; height: 100%; transform-style: preserve-3d; animation: bob 5s ease-in-out infinite; }
+        @keyframes bob { 50% { transform: translateY(calc(var(--b) * -0.18)); } }
+        .world {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transform: rotateX(var(--rx, -14deg)) rotateY(var(--ry, -16deg));
+            transition: transform 0.4s ease-out;
         }
-        .error .what { margin: 0; font-size: 13px; line-height: 1.8; word-break: break-word; }
-        .error .what b { font-weight: normal; color: #ff5555; text-shadow: 2px 2px 0 #3f1515; }
-        .error .why { margin: 4px 0 0; font-size: 11px; color: #a0a0a0; }
-
-        /* =========================================================
-           LISTE DES SERVEURS (= mes sites)
-           ========================================================= */
-        .list-title { text-align: center; margin: 6px 0 8px; font-size: 13px; font-weight: normal; }
-        .list {
-            flex: 1;
-            padding: 6px 16px;
-            background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55));
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
-            box-shadow: inset 0 6px 6px -4px rgba(0, 0, 0, 0.9), inset 0 -6px 6px -4px rgba(0, 0, 0, 0.9);
+        .cube {
+            position: absolute;
+            left: calc(var(--x) * var(--b));
+            top: calc(var(--y) * var(--b));
+            width: var(--b);
+            height: var(--b);
+            transform-style: preserve-3d;
         }
-        .server {
-            display: grid;
-            grid-template-columns: 64px 1fr auto;
-            gap: 4px 10px;
-            max-width: 610px;
-            margin: 4px auto;
-            padding: 4px;
-            border: 2px solid transparent;
-            color: #fff;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .server.selected { border-color: #808080; background: #000; }
-        .server .icon { position: relative; width: 64px; height: 64px; grid-row: span 3; }
-        .server .icon img { width: 64px; height: 64px; display: block; image-rendering: auto; }
-        /* au survol, la flèche "rejoindre" sur l'icône, comme dans le jeu */
-        .server .icon::after {
-            content: "";
+        .drop { width: 100%; height: 100%; transform-style: preserve-3d; animation: fall 0.55s cubic-bezier(0.55, 0, 1, 0.45) var(--d) both; }
+        @keyframes fall { from { transform: translateY(-110vh); } }
+        .cube i {
             position: absolute;
             inset: 0;
-            background: rgba(144, 144, 144, 0.55);
-            clip-path: polygon(30% 22%, 74% 50%, 30% 78%);
-            opacity: 0;
+            background-size: 100% 100%;
+            backface-visibility: hidden;
         }
-        .server.selected .icon::after { opacity: 1; }
-        .server .name { font-size: 13px; padding-top: 2px; }
-        .server .ping { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a0a0a0; }
-        .server .bars {
+        .cube .ft { transform: translateZ(calc(var(--b) / 2)); }
+        .cube .bk { transform: rotateY(180deg) translateZ(calc(var(--b) / 2)); }
+        .cube .tp { transform: rotateX(90deg) translateZ(calc(var(--b) / 2)); filter: brightness(1.08); }
+        .cube .bt { transform: rotateX(-90deg) translateZ(calc(var(--b) / 2)); filter: brightness(0.5); }
+        .cube .lf { transform: rotateY(-90deg) translateZ(calc(var(--b) / 2)); filter: brightness(0.75); }
+        .cube .rt { transform: rotateY(90deg) translateZ(calc(var(--b) / 2)); filter: brightness(0.75); }
+        .grass i { background-image: url('grass_side.png'); }
+        .grass .tp { background-image: url('grass_top.png'); }
+        .grass .bt { background-image: url('dirt.png'); }
+        .dirt i { background-image: url('dirt.png'); }
+        .obsidian i { background-image: url('obsidian.png'); }
+        .grass, .dirt { cursor: url('pickaxe.png') 4 4, pointer; }
+        .cube.broken { visibility: hidden; }
+        .cube.regrow .drop { animation: regrow 0.25s steps(3) both; }
+        @keyframes regrow { from { transform: scale(0.2); } }
+        .cube.shake .drop { animation: shake 0.3s steps(3); }
+        @keyframes shake { 33% { transform: translateX(-3px); } 66% { transform: translateX(3px); } }
+
+        /* le portail : la vraie texture animée (32 images) */
+        .portal {
+            position: absolute;
+            left: calc(var(--b) * 5);
+            top: var(--b);
+            width: calc(var(--b) * 2);
+            height: calc(var(--b) * 3);
+            background: url('portal.png') 0 0 / var(--b) calc(var(--b) * 32) repeat;
+            opacity: 0.85;
+            animation: portal 1.6s steps(32) infinite, fadein 0.3s 1.4s both;
+            cursor: pointer;
+        }
+        @keyframes portal { to { background-position: 0 calc(var(--b) * -32); } }
+        @keyframes fadein { from { opacity: 0; } }
+
+        .hint {
+            position: relative;
+            z-index: 1;
+            margin: calc(var(--b) * 1.2) 0 0;
+            font-size: 11px;
+            color: #fff;
+            text-align: center;
+            text-shadow: 2px 2px 0 #3f3f3f;
+        }
+
+        /* éclats d'un bloc cassé */
+        .bit {
+            position: fixed;
+            z-index: 50;
+            width: 8px;
+            height: 8px;
+            background-size: 32px 32px;
+            pointer-events: none;
+            animation: bit 0.7s cubic-bezier(0.2, 0.6, 0.6, 1) forwards;
+        }
+        @keyframes bit {
+            to { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+        }
+
+        /* =========================================================
+           LE SOL : une rangée d'herbe, puis la terre où sont posées les pages
+           ========================================================= */
+        .ground {
+            position: relative;
+            padding: 46px 16px 40px;
+            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.7)), url('dirt.png') 0 0 / 64px;
+        }
+        .ground::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -30px;
+            height: 64px;
+            background: url('grass_side.png') 0 0 / 64px repeat-x;
+        }
+        .ground > * { position: relative; }
+
+        .lost { text-align: center; max-width: 760px; margin: 0 auto 24px; text-shadow: 2px 2px 0 #000; }
+        .lost h1 { margin: 0 0 10px; font-weight: normal; font-size: 18px; }
+        .lost .what { margin: 0; font-size: 12px; color: #d0d0d0; word-break: break-word; }
+        .lost .what b { font-weight: normal; color: #ff5555; }
+
+        /* Les panneaux gris de l'inventaire */
+        .panel {
+            background: var(--panel);
+            color: var(--ink);
+            border: 2px solid #000;
+            box-shadow: inset 3px 3px 0 var(--light), inset -3px -3px 0 var(--dark);
+            padding: 14px;
+        }
+
+        .guess { max-width: 860px; margin: 0 auto 18px; display: none; }
+        .guess.on { display: flex; }
+        .guess {
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            background: #e6d77a;
+            box-shadow: inset 3px 3px 0 #fff6b8, inset -3px -3px 0 #8f8230;
+        }
+        .guess:hover { background: #f0e28a; }
+        .guess img { width: 48px; height: 48px; object-fit: cover; border: 2px solid #000; }
+        .guess small { display: block; font-size: 10px; color: #6b5f12; }
+        .guess strong { display: block; font-weight: normal; font-size: 14px; }
+        .guess .url { font-size: 10px; color: #4a4a4a; word-break: break-all; }
+        .guess .go { margin-left: auto; font-size: 12px; white-space: nowrap; }
+
+        .sites { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; max-width: 860px; margin: 0 auto; }
+        .site-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+        .site-head img { width: 32px; height: 32px; image-rendering: auto; }
+        .site-head h2 { margin: 0; font-weight: normal; font-size: 14px; }
+        .site-head small { display: block; font-size: 10px; color: #6f6f6f; }
+        .site-head .bars {
+            margin-left: auto;
             width: 20px;
             height: 16px;
             background: url('ping.png') 0 0 / 20px 96px;
-            image-rendering: pixelated;
             visibility: hidden;
         }
-        .server .motd { grid-column: 2 / 4; font-size: 11px; line-height: 1.6; color: #aaaaaa; }
-        .server .addr { grid-column: 2 / 4; font-size: 10px; color: #6f6f6f; }
+        .site-head .ms { font-size: 10px; color: #6f6f6f; }
 
-        /* La suggestion "Did you mean" : la page la plus proche de ce qui a été tapé */
-        .server.guess .name { color: #ffff55; text-shadow: 2px 2px 0 #3f3f15; }
-        .server.guess .motd { color: #fff; word-break: break-all; }
+        .pages { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+        .pages a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 6px;
+            text-decoration: none;
+            background: #8b8b8b;
+            border: 2px solid;
+            border-color: #373737 #fff #fff #373737;
+            color: #fff;
+            text-shadow: 1px 1px 0 #3f3f3f;
+        }
+        .pages a:hover { background: #a8a8a8; }
+        .pages img { width: 32px; height: 32px; flex: none; object-fit: cover; image-rendering: auto; }
+        .pages span { font-size: 12px; }
+        .pages small { display: block; font-size: 9px; color: #e8e8e8; }
 
         /* =========================================================
-           BOUTONS
+           LA BEDROCK EN BAS
            ========================================================= */
-        .buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            max-width: 620px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 12px 16px 16px;
-        }
-        .mc-btn {
-            display: block;
+        footer {
+            padding: 22px 16px;
             text-align: center;
-            font-family: inherit;
-            background: #6f6f6f;
-            border: 2px solid #000;
-            box-shadow: inset 2px 2px 0 #aaaaaa, inset -2px -2px 0 #3c3c3c;
-            padding: 10px 12px;
-            color: #e0e0e0;
-            text-decoration: none;
-            font-size: 13px;
-            text-shadow: 2px 2px 0 #383838;
-            cursor: pointer;
+            font-size: 11px;
+            background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('bedrock.png') 0 0 / 64px;
+            text-shadow: 2px 2px 0 #000;
         }
-        .mc-btn:hover { background: #7e86b8; box-shadow: inset 2px 2px 0 #bec6ff, inset -2px -2px 0 #3a4170; color: #ffffa0; }
-        .mc-btn.wide { grid-column: 1 / -1; }
+        footer a { color: #ffff55; }
 
-        @media (max-width: 560px) {
-            .server { grid-template-columns: 48px 1fr auto; }
-            .server .icon, .server .icon img { width: 48px; height: 48px; }
-            .buttons { grid-template-columns: 1fr; }
+        /* =========================================================
+           SUCCÈS (toast) ET PASSAGE DANS LE PORTAIL
+           ========================================================= */
+        .toast {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 300px;
+            padding: 10px 12px;
+            background: #212121;
+            border: 2px solid #000;
+            box-shadow: inset 2px 2px 0 #555, inset -2px -2px 0 #111;
+            transform: translateX(340px);
+            transition: transform 0.4s steps(6);
+        }
+        .toast.on { transform: none; }
+        .toast img { width: 32px; height: 32px; }
+        .toast b { display: block; font-weight: normal; font-size: 11px; color: #ffff55; }
+        .toast span { font-size: 11px; }
+        .nausea { position: fixed; inset: 0; z-index: 70; pointer-events: none; background: rgba(110, 30, 200, 0); }
+        .nausea.on { animation: nausea 1.3s ease-in forwards; }
+        @keyframes nausea { to { background: rgba(110, 30, 200, 0.95); } }
+        body.warp > :not(.nausea) { animation: warp 1.3s ease-in forwards; }
+        @keyframes warp {
+            30% { transform: skewX(4deg) scale(1.03); }
+            60% { transform: skewX(-6deg) scale(1.08); }
+            100% { transform: skewX(8deg) scale(1.2); filter: hue-rotate(60deg) blur(3px); }
+        }
+
+        @media (max-width: 680px) {
+            .sites { grid-template-columns: 1fr; }
+            .guess .go { display: none; }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -165,189 +305,292 @@
 </head>
 <body>
 
-    <div class="connecting" id="connecting">
-        <span id="step" class="dots">Connecting to the server</span>
-        <small id="stepHost"></small>
-    </div>
+    <header class="sky" id="sky">
+        <div class="sun"></div>
+        <div class="clouds"></div>
+        <div class="stage" id="stage">
+            <div class="bob"><div class="world" id="world"></div></div>
+        </div>
+        <p class="hint">Mine the blocks, or step into the portal for a random page</p>
+    </header>
 
-    <section class="error">
-        <h1>Failed to connect to the server</h1>
-        <p class="what" id="what">Page not found</p>
-        <p class="why" id="why">This page does not exist, but these servers are online.</p>
-    </section>
+    <main class="ground">
+        <section class="lost">
+            <h1 id="title">This chunk was never generated</h1>
+            <p class="what" id="what">The page you are looking for does not exist. Here is where you can go instead.</p>
+        </section>
 
-    <h2 class="list-title">Play Multiplayer</h2>
-
-    <div class="list" id="list">
-        <a class="server" href="https://www.amaicraft.fr/" data-ping="https://www.amaicraft.fr/Icon.png">
-            <span class="icon"><img src="amaicraft.png" alt=""></span>
-            <span class="name">AmaiCraft</span>
-            <span class="ping"><span class="count"></span><span class="bars"></span></span>
-            <span class="motd"><span style="color:#ffff55">An unofficial Minecraft toolbox</span><br>Recipes, commands, mob sounds, music discs, capes</span>
-            <span class="addr">www.amaicraft.fr</span>
+        <a class="guess panel" id="guess" href="#">
+            <img alt="">
+            <div>
+                <small>Did you mean...</small>
+                <strong></strong>
+                <span class="url"></span>
+            </div>
+            <span class="go">Join &gt;</span>
         </a>
-        <a class="server" href="https://arg.amaicraft.fr/" data-ping="https://arg.amaicraft.fr/Characters/Verity/Verity.webp">
-            <span class="icon"><img src="void-archives.png" alt=""></span>
-            <span class="name">Void Archives</span>
-            <span class="ping"><span class="count"></span><span class="bars"></span></span>
-            <span class="motd"><span style="color:#ff5555">Something is Already Here...</span><br>Minecraft horror ARGs: Creator, Verity, The King in Yellow</span>
-            <span class="addr">arg.amaicraft.fr</span>
-        </a>
-    </div>
 
-    <div class="buttons">
-        <a href="#" class="mc-btn" id="join">Join Server</a>
-        <a href="#" class="mc-btn" id="refresh">Refresh</a>
-        <a href="https://www.amaicraft.fr/" class="mc-btn wide">Back to Title Screen</a>
-    </div>
+        <div class="sites" id="sites"></div>
+    </main>
+
+    <footer>
+        You reached bedrock. <a href="https://www.amaicraft.fr/">Back to the title screen</a>
+    </footer>
+
+    <div class="toast" id="toast"><img src="pickaxe.png" alt=""><div><b>Advancement Made!</b><span>Error 404: Blocks Not Found</span></div></div>
+    <div class="nausea" id="nausea"></div>
 
     <script>
         var CALM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var W = "https://www.amaicraft.fr", A = "https://arg.amaicraft.fr";
 
-        // Mes sites : leur adresse, leur icône et leur sitemap (pour deviner la bonne page)
-        var SITES = {
-            "www.amaicraft.fr": { icon: "amaicraft.png", sitemap: "https://www.amaicraft.fr/sitemap.xml" },
-            "arg.amaicraft.fr": { icon: "void-archives.png", sitemap: "https://arg.amaicraft.fr/sitemap.xml" }
-        };
-        // Sous-domaines qui existent vraiment : une adresse ailleurs est un "Unknown host"
+        // =========================================================
+        // Mes sites et leurs pages. Les sitemaps complètent cette liste toute seule.
+        // =========================================================
+        var SITES = [
+            { host: "www.amaicraft.fr", name: "AmaiCraft", icon: "amaicraft.png", ping: W + "/Icon.png", sitemap: W + "/sitemap.xml", pages: [
+                { path: "/", name: "Home", desc: "The AmaiCraft title screen", icon: W + "/assets/ui/grass_block.png" },
+                { path: "/recipecraft/", name: "Crafting Guide", desc: "Every crafting recipe", icon: W + "/assets/ui/crafting_table.webp" },
+                { path: "/commands/", name: "Commands", desc: "The basic commands", icon: W + "/assets/ui/command_block.png" },
+                { path: "/Mobs/", name: "Mob Sounds", desc: "Hear every mob", icon: W + "/assets/ui/creeper_head.png" },
+                { path: "/music/", name: "Jukebox", desc: "Every music disc", icon: W + "/assets/ui/jukebox.png" },
+                { path: "/Capes/", name: "Capes", desc: "Every Minecraft cape", icon: W + "/assets/ui/elytra.png" },
+                { path: "/Game/", name: "Mining Game", desc: "A little mining mini-game", icon: W + "/assets/ui/diamond_pickaxe.png" }
+            ]},
+            { host: "arg.amaicraft.fr", name: "Void Archives", icon: "void-archives.png", ping: A + "/Characters/Verity/Verity.webp", sitemap: A + "/sitemap.xml", pages: [
+                { path: "/", name: "Main Menu", desc: "Minecraft horror ARG archives", icon: "void-archives.png" },
+                { path: "/Characters/Creator/", name: "Creator", desc: "Twixxel's ARG, day by day", icon: A + "/Characters/Creator/Creator.png" },
+                { path: "/Characters/Verity/", name: "Verity", desc: "ThatMob's ARG, two timelines", icon: A + "/Characters/Verity/Images/Verity_happy_face.webp" },
+                { path: "/Characters/Verity/thatmob.html", name: "Verity: ThatMob", desc: "The canon story", icon: A + "/Characters/Verity/Images/Verity_evil_face.png" },
+                { path: "/Characters/Verity/grox.html", name: "Verity: Grox", desc: "Grox's timeline", icon: A + "/Characters/Verity/Images/Grox%27sLastPost.webp" },
+                { path: "/Characters/TheKingInYellow/", name: "The King in Yellow", desc: "Wifies' ARG, unfinished", icon: A + "/Characters/TheKingInYellow/Thekinginyellowtrueform.webp" }
+            ]}
+        ];
         var KNOWN_HOSTS = ["www.amaicraft.fr", "amaicraft.fr", "arg.amaicraft.fr", "funny.amaicraft.fr",
                            "fromthefog.amaicraft.fr", "amaisharkyuu.amaicraft.fr", "mc.amaicraft.fr"];
 
         // =========================================================
-        // L'adresse que le visiteur a tapée, envoyée par le 404.html de chaque site
+        // L'adresse tapée, envoyée par le 404.html de chaque site
         // =========================================================
         var from = null;
         try { from = new URL(new URLSearchParams(location.search).get("from")); } catch (e) {}
         if (from && !/(^|\.)amaicraft\.fr$/.test(from.hostname)) from = null;
 
-        var what = document.getElementById("what");
-        var why = document.getElementById("why");
-        var shown = from ? from.hostname + decodeURI(from.pathname).replace(/\/$/, "") : "";
-        function say(label, value, reason) {
-            what.textContent = label + " ";
-            var b = document.createElement("b");
-            b.textContent = value;
-            what.appendChild(b);
-            why.textContent = reason;
-        }
-        if (from && KNOWN_HOSTS.indexOf(from.hostname) === -1) {
-            say("Unknown host:", from.hostname, "This server does not exist, but these ones are online.");
-        } else if (from) {
-            say("Chunk not found:", shown, "This page was never generated in this world.");
-        }
-
-        // =========================================================
-        // Écran "Connecting to the server..." puis "Logging in...", avant l'erreur
-        // =========================================================
         (function () {
-            var box = document.getElementById("connecting");
-            if (CALM) { box.classList.add("gone"); return; }
-            document.getElementById("stepHost").textContent = from ? from.hostname : location.hostname;
-            setTimeout(function () { document.getElementById("step").textContent = "Logging in"; }, 900);
-            setTimeout(function () { box.classList.add("gone"); }, 1400);
+            if (!from) return;
+            var what = document.getElementById("what");
+            var b = document.createElement("b");
+            if (KNOWN_HOSTS.indexOf(from.hostname) === -1) {
+                document.getElementById("title").textContent = "Unknown host";
+                b.textContent = from.hostname;
+                what.textContent = "";
+                what.append(b, " does not exist. These servers do:");
+            } else {
+                b.textContent = from.hostname + decodeURI(from.pathname).replace(/\/$/, "");
+                what.textContent = "";
+                what.append(b, " was never generated. Try one of these pages:");
+            }
         })();
 
         // =========================================================
-        // Liste : survol = sélection, clic = rejoindre, flèches + Entrée au clavier
+        // Le grand 404 en blocs
         // =========================================================
-        var list = document.getElementById("list");
-        function servers() { return Array.prototype.slice.call(list.querySelectorAll(".server")); }
-        var current = null;
-        function select(s) {
-            current = s;
-            servers().forEach(function (x) { x.classList.toggle("selected", x === s); });
+        var FOUR = ["X.X", "X.X", "XXX", "..X", "..X"];
+        var ZERO = ["OOOO", "O..O", "O..O", "O..O", "OOOO"];
+        var world = document.getElementById("world");
+        var grassCount = 0;
+
+        function cube(x, y, kind, delay) {
+            var c = document.createElement("div");
+            c.className = "cube " + kind;
+            c.style.setProperty("--x", x);
+            c.style.setProperty("--y", y);
+            c.innerHTML = '<div class="drop" style="--d:' + delay + 's"><i class="ft"></i><i class="bk"></i><i class="tp"></i><i class="bt"></i><i class="lf"></i><i class="rt"></i></div>';
+            world.appendChild(c);
+            if (kind !== "obsidian") grassCount++;
         }
-        list.addEventListener("mouseover", function (e) {
-            var s = e.target.closest(".server");
-            if (s) select(s);
-        });
-        list.addEventListener("focusin", function (e) {
-            var s = e.target.closest(".server");
-            if (s) select(s);
-        });
-        document.getElementById("join").addEventListener("click", function (e) {
-            e.preventDefault();
-            location.href = (current || servers()[0]).href;
-        });
-        addEventListener("keydown", function (e) {
-            var all = servers(), i = all.indexOf(current);
-            if (e.key === "ArrowDown") { select(all[(i + 1) % all.length]); e.preventDefault(); }
-            else if (e.key === "ArrowUp") { select(all[(i - 1 + all.length) % all.length]); e.preventDefault(); }
-            else if (e.key === "Enter" && current) location.href = current.href;
+        function digit(rows, ox, kind) {
+            rows.forEach(function (row, y) {
+                row.split("").forEach(function (ch, x) {
+                    if (ch === ".") return;
+                    // comme dans le jeu, l'herbe recouverte par un autre bloc devient de la terre
+                    var k = kind === "grass" && y > 0 && rows[y - 1][x] !== "." ? "dirt" : kind;
+                    // les blocs tombent colonne par colonne, de gauche à droite, le bas d'abord
+                    cube(ox + x, y, k, ((ox + x) * 0.07 + (4 - y) * 0.05).toFixed(2));
+                });
+            });
+        }
+        digit(FOUR, 0, "grass");
+        digit(ZERO, 4, "obsidian");
+        digit(FOUR, 9, "grass");
+        var portal = document.createElement("div");
+        portal.className = "portal";
+        portal.title = "Random page";
+        world.appendChild(portal);
+
+        // Le 404 suit la souris, un peu comme la page 404 de GitHub
+        var stage = document.getElementById("stage");
+        addEventListener("mousemove", function (e) {
+            var x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
+            world.style.setProperty("--ry", (-16 + x * 34).toFixed(1) + "deg");
+            world.style.setProperty("--rx", (-14 - y * 18).toFixed(1) + "deg");
         });
 
         // =========================================================
-        // Ping : le vrai temps de réponse de chaque site, en barres de signal
+        // Miner : un clic casse un bloc d'herbe, il repousse quelques secondes plus tard.
+        // Tout casser donne un succès. L'obsidienne, elle, résiste.
         // =========================================================
-        function ping(s) {
-            var bars = s.querySelector(".bars");
-            var count = s.querySelector(".count");
-            if (!s.dataset.ping) return;
-            bars.style.visibility = "hidden";
-            count.textContent = "Pinging...";
+        var broken = 0, toastShown = false;
+        world.addEventListener("click", function (e) {
+            var c = e.target.closest(".cube");
+            if (!c) return;
+            if (c.classList.contains("obsidian")) {
+                c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
+                return;
+            }
+            if (c.classList.contains("broken")) return;
+            var r = c.getBoundingClientRect();
+            if (!CALM) for (var i = 0; i < 10; i++) {
+                var p = document.createElement("div");
+                p.className = "bit";
+                p.style.left = (r.left + Math.random() * r.width) + "px";
+                p.style.top = (r.top + Math.random() * r.height) + "px";
+                p.style.backgroundImage = "url('" + (Math.random() < 0.3 ? "grass_top.png" : "dirt.png") + "')";
+                p.style.backgroundPosition = -Math.floor(Math.random() * 24) + "px " + -Math.floor(Math.random() * 24) + "px";
+                p.style.setProperty("--dx", (Math.random() * 80 - 40) + "px");
+                p.style.setProperty("--dy", (Math.random() * 70 + 20) + "px");
+                document.body.appendChild(p);
+                setTimeout(p.remove.bind(p), 750);
+            }
+            c.classList.add("broken");
+            c.classList.remove("regrow");
+            broken++;
+            if (broken === grassCount && !toastShown) showToast();
+            setTimeout(function () {
+                c.classList.remove("broken");
+                c.classList.add("regrow");
+                broken--;
+            }, 7000);
+        });
+
+        function showToast() {
+            toastShown = true;
+            var t = document.getElementById("toast");
+            t.classList.add("on");
+            setTimeout(function () { t.classList.remove("on"); }, 5000);
+        }
+
+        // =========================================================
+        // Le portail : direction une page au hasard, avec la nausée du passage
+        // =========================================================
+        var ALL = [];
+        portal.addEventListener("click", function () {
+            var page = ALL[Math.floor(Math.random() * ALL.length)];
+            if (CALM) { location.href = page.url; return; }
+            document.body.classList.add("warp");
+            document.getElementById("nausea").classList.add("on");
+            setTimeout(function () { location.href = page.url; }, 1300);
+        });
+        addEventListener("pageshow", function () {
+            document.body.classList.remove("warp");
+            document.getElementById("nausea").classList.remove("on");
+        });
+
+        // =========================================================
+        // Les pages, posées directement sous le 404
+        // =========================================================
+        var sitesBox = document.getElementById("sites");
+        function render() {
+            sitesBox.innerHTML = "";
+            ALL = [];
+            SITES.forEach(function (s) {
+                var panel = document.createElement("section");
+                panel.className = "panel";
+                panel.innerHTML = '<div class="site-head"><img alt=""><div><h2></h2><small></small></div><span class="ms"></span><span class="bars"></span></div><ul class="pages"></ul>';
+                panel.querySelector(".site-head img").src = s.icon;
+                panel.querySelector("h2").textContent = s.name;
+                panel.querySelector(".site-head small").textContent = s.host;
+                var ul = panel.querySelector(".pages");
+                s.pages.forEach(function (p) {
+                    p.url = "https://" + s.host + p.path;
+                    p.site = s;
+                    ALL.push(p);
+                    var li = document.createElement("li");
+                    li.innerHTML = '<a><img alt="" loading="lazy"><div><span></span><small></small></div></a>';
+                    li.querySelector("a").href = p.url;
+                    li.querySelector("img").src = p.icon || s.icon;
+                    li.querySelector("span").textContent = p.name;
+                    li.querySelector("small").textContent = p.desc || p.path;
+                    ul.appendChild(li);
+                });
+                sitesBox.appendChild(panel);
+                ping(s, panel);
+            });
+        }
+
+        // le vrai temps de réponse de chaque site, en barres de signal du jeu
+        function ping(s, panel) {
+            var bars = panel.querySelector(".bars"), ms = panel.querySelector(".ms");
             var t = performance.now();
-            fetch(s.dataset.ping + "?ping=" + Date.now(), { mode: "no-cors", cache: "no-store" })
+            fetch(s.ping + "?ping=" + Date.now(), { mode: "no-cors", cache: "no-store" })
                 .then(function () {
-                    var ms = Math.round(performance.now() - t);
-                    var frame = ms < 150 ? 0 : ms < 300 ? 1 : ms < 600 ? 2 : ms < 1000 ? 3 : 4;
-                    bars.style.backgroundPosition = "0 " + (-16 * frame) + "px";
-                    bars.title = ms + " ms";
-                    count.textContent = ms + " ms";
+                    var d = Math.round(performance.now() - t);
+                    bars.style.backgroundPosition = "0 " + (-16 * (d < 150 ? 0 : d < 300 ? 1 : d < 600 ? 2 : d < 1000 ? 3 : 4)) + "px";
+                    ms.textContent = d + " ms";
                 })
-                .catch(function () {
-                    bars.style.backgroundPosition = "0 -80px";
-                    bars.title = "Can't connect to server";
-                    count.textContent = "";
-                })
+                .catch(function () { bars.style.backgroundPosition = "0 -80px"; })
                 .then(function () { bars.style.visibility = "visible"; });
         }
-        function pingAll() { servers().forEach(ping); }
-        pingAll();
-        document.getElementById("refresh").addEventListener("click", function (e) { e.preventDefault(); pingAll(); });
 
-        // =========================================================
-        // "Did you mean" : on cherche dans les sitemaps la page dont le nom ressemble à ce qui a été tapé
-        // (arg.amaicraft.fr/Creator -> arg.amaicraft.fr/Characters/Creator/)
-        // =========================================================
-        function clean(t) { return decodeURIComponent(t).toLowerCase().replace(/\.html?$/, "").replace(/[^a-z0-9]/g, ""); }
-        var typed = from ? from.pathname.split("/").filter(Boolean).map(clean).filter(Boolean) : [];
-        if (typed.length) {
-            var key = typed[typed.length - 1];
-            var hosts = Object.keys(SITES);
-            Promise.all(hosts.map(function (h) {
-                return fetch(SITES[h].sitemap).then(function (r) { return r.text(); }).catch(function () { return ""; });
-            })).then(function (maps) {
-                var best = null;
-                maps.forEach(function (xml, i) {
-                    var locs = xml.match(/<loc>[^<]+<\/loc>/g) || [];
-                    locs.forEach(function (l) {
-                        var url = l.replace(/<\/?loc>/g, "");
-                        var segs;
-                        try { segs = new URL(url).pathname.split("/").filter(Boolean).map(clean); } catch (e) { return; }
-                        var score = 0;
-                        segs.forEach(function (sg) {
-                            if (sg === key) score = Math.max(score, 3);
-                            else if (key.length >= 3 && sg.indexOf(key) !== -1) score = Math.max(score, 2);
-                            else if (sg.length >= 4 && key.indexOf(sg) !== -1) score = Math.max(score, 1);
-                        });
-                        if (!score) return;
-                        if (hosts[i] === from.hostname) score += 0.5;     // même site d'abord
-                        score -= segs.length * 0.01;                      // et la page la moins profonde
-                        if (!best || score > best.score) best = { score: score, url: url, host: hosts[i] };
-                    });
+        render();
+
+        // Les sitemaps ajoutent les pages qui manquent ici, puis on cherche la page la plus proche
+        function clean(t) { try { t = decodeURIComponent(t); } catch (e) {} return t.toLowerCase().replace(/\.html?$/, "").replace(/[^a-z0-9]/g, ""); }
+        function title(seg) { return seg.replace(/\.html?$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+
+        Promise.all(SITES.map(function (s) {
+            return fetch(s.sitemap).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; });
+        })).then(function (maps) {
+            maps.forEach(function (xml, i) {
+                var s = SITES[i];
+                (xml.match(/<loc>[^<]+<\/loc>/g) || []).forEach(function (l) {
+                    var path;
+                    try { path = new URL(l.replace(/<\/?loc>/g, "")).pathname; } catch (e) { return; }
+                    if (s.pages.some(function (p) { return p.path === path; })) return;
+                    var segs = path.split("/").filter(Boolean);
+                    s.pages.push({ path: path, name: title(segs[segs.length - 1] || "Home"), desc: path });
                 });
-                if (!best) return;
-                var a = document.createElement("a");
-                a.className = "server guess";
-                a.href = best.url;
-                a.innerHTML = '<span class="icon"><img alt=""></span><span class="name">Did you mean...</span>' +
-                              '<span class="ping"><span class="count"></span></span><span class="motd"></span>' +
-                              '<span class="addr">Click to join this page</span>';
-                a.querySelector("img").src = SITES[best.host].icon;
-                a.querySelector(".motd").textContent = best.url.replace(/^https?:\/\//, "");
-                list.insertBefore(a, list.firstChild);
-                select(a);
             });
+            render();
+            guess();
+        });
+
+        function guess() {
+            if (!from) return;
+            var typed = from.pathname.split("/").filter(Boolean).map(clean).filter(Boolean);
+            if (!typed.length) return;
+            var key = typed[typed.length - 1], best = null;
+            ALL.forEach(function (p) {
+                var segs = p.path.split("/").filter(Boolean).map(clean).concat([clean(p.name)]);
+                var score = 0;
+                segs.forEach(function (sg) {
+                    if (!sg) return;
+                    if (sg === key) score = Math.max(score, 3);
+                    else if (key.length >= 3 && sg.indexOf(key) !== -1) score = Math.max(score, 2);
+                    else if (sg.length >= 4 && key.indexOf(sg) !== -1) score = Math.max(score, 1);
+                });
+                if (!score) return;
+                if (p.site.host === from.hostname) score += 0.5;
+                score -= p.path.split("/").length * 0.01;
+                if (!best || score > best.score) best = { score: score, page: p };
+            });
+            if (!best) return;
+            var g = document.getElementById("guess");
+            g.href = best.page.url;
+            g.querySelector("img").src = best.page.icon || best.page.site.icon;
+            g.querySelector("strong").textContent = best.page.name;
+            g.querySelector(".url").textContent = best.page.url.replace(/^https:\/\//, "");
+            g.classList.add("on");
         }
     </script>
 </body>
